@@ -1,29 +1,11 @@
 # TicTacToe
 
-TODO: Write a gem description
+Ruby command line tic-tac-toe game.
 
-## Installation
+## About
 
-Add this line to your application's Gemfile:
+The tic-tac-toe application accompanies an online tutorial for building object-oriented games with Ruby.  Here is a link to the online tutorial: http://wp.me/p3sWrq-3P
 
-    gem 'tic_tac_toe'
+I plan to create a pre work code quiz for this game on my website: http://www.codequizzes.com/
 
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install tic_tac_toe
-
-## Usage
-
-TODO: Write usage instructions here
-
-## Contributing
-
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+If you have any questions or comments on the application, please feel free to send me a pull request or an email.
