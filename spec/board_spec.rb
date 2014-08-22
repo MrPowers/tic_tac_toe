@@ -10,13 +10,13 @@ module TicTacToe
 
       it "sets the grid with three rows by default" do
         board = Board.new
-        expect(board.grid).to have(3).things
+        expect(board.grid.size).to eq(3)
       end
 
       it "creates three things in each row by default" do
         board = Board.new
         board.grid.each do |row|
-          expect(row).to have(3).things
+          expect(row.size).to eq(3)
         end
       end
     end
@@ -54,22 +54,22 @@ let(:empty) { TestCell.new }
 context "#game_over" do
   it "returns :winner if winner? is true" do
     board = Board.new
-    board.stub(:winner?) { true }
+    allow(board).to receive(:winner?) { true }
     expect(board.game_over).to eq :winner
   end
 
   it "returns :draw if winner? is false and draw? is true" do
     board = Board.new
-    board.stub(:winner?) { false }
-    board.stub(:draw?) { true }
+    allow(board).to receive(:winner?) { false }
+    allow(board).to receive(:draw?) { true }
     expect(board.game_over).to eq :draw
   end
 
   it "returns false if winner? is false and draw? is false" do
     board = Board.new
-    board.stub(:winner?) { false }
-    board.stub(:draw?) { false }
-    expect(board.game_over).to be_false
+    allow(board).to receive(:winner?) { false }
+    allow(board).to receive(:draw?) { false }
+    expect(board.game_over).to be_falsey
   end
 
   it "returns :winner when row has objects with values that are all the same" do
@@ -119,7 +119,7 @@ context "#game_over" do
       [y_cell, empty, empty]
     ]
     board = Board.new(grid: grid)
-    expect(board.game_over).to be_false
+    expect(board.game_over).to be_falsey
   end
 end
 
