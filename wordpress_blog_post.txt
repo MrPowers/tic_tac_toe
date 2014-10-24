@@ -1,0 +1,820 @@
+Building games is a great way to learn about object oriented programming, good design practices, and the structure of Ruby gems. This post describes how to build a well-tested Ruby tic-tac-toe game that runs on the command line.
+
+The GitHub repository for this tutorial is here: https://github.com/MrPowers/tic_tac_toe
+
+<strong>Objective</strong>
+
+The tic-tac-toe gem can be played by two humans on the command line.  The tic-tac-toe board is a 3 X 3 grid and players alternate turns until one player is victorious or the game ends in a draw.  Players win by securing three consecutive positions on a row, column, or diagonal.  The game ends in a tie if neither player has won and all positions on the board are taken.
+
+<strong>Program design</strong>
+
+Object oriented code should be organized in single-purpose classes, so it is easier to maintain and modify.  Describing a program in plain English and identifying the nouns in the description is a good way to identify classes in a program.  The objective's description mentioned players, a board, positions on a board (aka a cell) and the tic-tac-toe game and these nouns will form the application's classes.  The verbs used in the objective will correspond to behavior we give objects in the form of methods.
+
+<strong>Creating a Ruby gem</strong>
+
+Ruby libraries are typically organized in a certain gem structure, so they are easy to host and include in other projects.  When creating a Ruby library, it is wise to follow the gem structure to take advantage of built-in benefits and make it easier for other Ruby developers to follow your code.  The Bundler gem makes it easy to create a gem called tic_tac_toe:
+
+[code language="ruby"]
+>> bundle gem tic_tac_toe
+[/code]
+
+This will create a repository with the following directory structure:
+
+<a href="http://codequizzes.files.wordpress.com/2013/10/screen-shot-2013-10-19-at-9-12-06-am.png"><img class="alignnone size-full wp-image-238" alt="Screen Shot 2013-10-19 at 9.12.06 AM" src="http://codequizzes.files.wordpress.com/2013/10/screen-shot-2013-10-19-at-9-12-06-am.png" width="345" height="224" /></a>
+
+The directory structure provided by the gem will be explained as we write the application code.
+
+<strong>Cell class</strong>
+
+The tic-tac-toe board has 3 rows with 3 columns each, so the grid consists of 9 cells.  Each cell can be blank, "X", or "O".
+
+<a href="http://codequizzes.files.wordpress.com/2013/10/tic-tac-toe-background.jpg"><img src="http://codequizzes.files.wordpress.com/2013/10/tic-tac-toe-background.jpg?w=300" alt="tic-tac-toe-background" width="300" height="300" class="alignnone size-medium wp-image-246" /></a>
+
+Constructing a Cell class that simply keeps track of a cell's value and is initialized with a default value of "" is straightforward.
+
+[code language="ruby"]
+# lib/tic_tac_toe/cell.rb
+module TicTacToe
+  class Cell
+    attr_accessor :value
+    def initialize(value = "")
+      @value = value
+    end
+  end
+end
+[/code]
+
+The Cell class is wrapped in a TicTacToe module to follow Ruby gem conventions and prevent class name collisions when gems are included in other projects.  If Cell is initialized without any arguments, the cell's value will be the empty string, but Cell can also be initialized with an argument.  After a cell is instantiated, its value cannot be updated.
+
+<strong>Setup RSpec</strong>
+
+Adding some tests for the Cell code will give us confidence that the code is behaving as expected.  Add RSpec to the gemspec file and run bundle install on the command line.
+
+[code language="ruby"]
+# tic_tac_toe.gemspec
+spec.add_development_dependency "rspec"
+[/code]
+
+Update the lib/tic_tac_toe.rb file to load the Cell class.
+
+[code language="ruby"]
+# lib/tic_tac_toe.rb
+require_relative "tic_tac_toe/version"
+
+module TicTacToe
+end
+
+require_relative "./tic_tac_toe/cell.rb"
+[/code]
+
+Create a spec/ directory and a spec/spec_helper.rb file.  The spec/spec_helper.rb file should be updated to require the lib/tic_tac_toe.rb file, so the tests know how to load the classes as well.
+
+[code language="ruby"]
+# spec/spec_helper.rb
+require_relative "../lib/tic_tac_toe.rb"
+[/code]
+
+Create a spec/cell_spec.rb file that requires the spec_helper and is setup so tests can be added.
+
+[code language="ruby"]
+# spec/cell_spec.rb
+require "spec_helper"
+
+module TicTacToe
+  describe Cell do
+    # tests will be added here
+  end
+end
+[/code]
+
+Requiring files is confusing for beginning programmers, so feel free to review the GitHub page for this project and copy the code and directory structure if you are encountering problems.
+
+<strong>Testing the Cell class</strong>
+
+Start by testing that a Cell object that is instantiated with no arguments will have a default value equal to the empty string.
+
+[code language="ruby"]
+# spec/cell_spec.rb
+module TicTacToe
+  describe Cell do
+
+    context "#initialize" do
+      it "is initialized with a value of '' by default" do
+        cell = Cell.new
+        expect(cell.value).to eq ''
+      end
+    end
+
+  end
+end
+[/code]
+
+Run the test with the following command:
+
+[code language="ruby"]
+>> rspec spec/cell_spec.rb
+[/code]
+
+Also add a test to the #initialize context block to make sure Cell can be initialized with "X":
+
+[code language="ruby"]
+it "can be initialized with a value of 'X'" do
+  cell = Cell.new("X")
+  expect(cell.value).to eq "X"
+end
+[/code]
+
+The Cell class is successfully implementing the desired behavior.  A Player class should be constructed to keep track of the two human players that will participate in the command line tic-tac-toe application.
+
+<strong>Player class</strong>
+
+The Player class will track a player's name and if they are an X or O.  For lack of a better word, a player's "color" will refer to if the player is X or O.  Additionally, the Player class should be instantiated with a hash that has :name and :color keys and will raise an exception if the required keys are missing.
+
+[code language="ruby"]
+# lib/tic_tac_toe/player.rb
+module TicTacToe
+  class Player
+    attr_reader :color, :name
+    def initialize(input)
+      @color = input.fetch(:color)
+      @name = input.fetch(:name)
+    end
+  end
+end
+[/code]
+
+The tests will demonstrate how the Player class is used.  When starting projects, many experienced Ruby programmers will read tests to see examples of the code in action.  Before we can write tests for the Player class, we need to load the file in lib/tic_tac_toe.rb.
+
+[code language="ruby"]
+# lib/tic_tac_toe.rb
+require_relative "./tic_tac_toe/player.rb"
+[/code]
+
+Test that the Player class will raise an exception when initialized with an invalid Hash.
+
+[code language="ruby"]
+# spec/player_spec.rb
+require "spec_helper"
+
+module TicTacToe
+  describe Player do
+    context "#initialize" do
+
+      it "raises an exception when initialized with {}" do
+        expect { Player.new({}) }.to raise_error
+      end
+
+    end
+  end
+end
+[/code]
+
+When testing for exceptions, the code that raises an exception must be in a block or else Ruby will raise an exception before RSpec gets a chance to rescue the exception.
+
+Add another test to demonstrate that an exception is not raised when Player is initialized with a valid input Hash.
+
+[code language="ruby"]
+# spec/player_spec.rb
+it "does not raise an error when initialized with a valid input hash" do
+  input = { color: "X", name: "Someone" }
+  expect { Player.new(input) }.to_not raise_error
+end
+[/code]
+
+Add some tests to make sure that the attr_reader has correctly defined getter methods for the name and color attributes.
+
+[code language="ruby"]
+# spec/player_spec.rb
+context "#color" do
+  it "returns the color" do
+    input = { color: "X", name: "Someone" }
+    player = Player.new(input)
+    expect(player.color).to eq "X"
+  end
+end
+
+context "#name" do
+  it "returns the player's name" do
+    input = { color: "X", name: "Someone" }
+    player = Player.new(input)
+    expect(player.name).to eq "Someone"
+  end
+end
+[/code]
+
+The Cell and Player classes have been straightforward, but the application will become more complex as we turn to the Board and Game classes.
+
+<strong>Board class</strong>
+
+The Board class should manage the tic-tac-toe grid by setting and getting grid values and checking if the game has ended with a win or a draw.  The Board class would ideally be generic enough to work with a variety of data structures, but this requires additional abstraction.  There is a thin line between too much abstraction and too little.  In this case, we will assume the grid is an Array with three nested Arrays, each with three elements.
+
+The nested array data structure closely mirrors an actual tic-tac-toe board:
+
+[code language="ruby"]
+example_array = [
+  ["X", "O", "X"],
+  ["O", "O", " "],
+  ["X", "O", "1"]
+]
+[/code]
+
+A nested data structure also provides a convenient coordinate system to access elements of the array.  Coordinate systems are usually stated in (x, y) and have an origin in the lower left corner.  The nested array coordinate system has an origin in the upper left corner and is stated in (y, x).  To access the "1" element in the example_array above, we use this code: example_array[2][2].  Make sure to play with the nested array structure in your console until you understand it.
+
+Start by creating a Board class that is initialized with an input hash that has a :grid key.
+
+[code language="ruby"]
+# lib/tic_tac_toe/board.rb
+module TicTacToe
+  class Board
+    def initialize(input)
+      @grid = input.fetch(:grid)
+    end
+  end
+end
+[/code]
+
+Add a test to make sure a Board can be instantiated with an input hash that has a :grid key without raising an error.
+
+[code language="ruby"]
+require "spec_helper"
+
+module TicTacToe
+  describe Board do
+
+    context "#initialize" do
+      it "initializes the board with a grid" do
+        expect { Board.new(grid: "grid") }.to_not raise_error
+      end
+    end
+
+  end
+end
+[/code]
+
+When a Board is instantiated, we typically want it to be filled with empty Cell objects.  Set a default value, so the Board class can either be instantiated with a user-specified hash or a default value.
+
+[code language="ruby"]
+# lib/tic_tac_toe/board.rb
+module TicTacToe
+  class Board
+    attr_reader :grid
+    def initialize(input = {})
+      @grid = input.fetch(:grid, default_grid)
+    end
+
+    private
+
+    def default_grid
+      Array.new(3) { Array.new(3) { Cell.new } }
+    end
+  end
+end
+[/code]
+
+Board#default_grid is a private method as it is only meant to be called by instances of the Board class.  It is important to limit public interfaces early in a project, especially for methods that are only intended to respond to messages from self.
+
+When testing the default_grid, we don't want our tests to be closely coupled with the data structure specified in the method (i.e. an Array with three nested Arrays and each nested Array has three Cell objects).  Tests should focus on behavior, not internal data structures.
+
+[code language="ruby"]
+it "sets the grid with three rows by default" do
+  board = Board.new
+  expect(board.grid).to have(3).things
+end
+
+it "creates three things in each row by default" do
+  board = Board.new
+  board.grid.each do |row|
+    expect(row).to have(3).things
+  end
+end
+[/code]
+
+Tests that focus on behavior are less rigid than tests on internal data structures.  If the application changes and the Cell class is renamed to Position, the tests above will not break.  However, if the tests checked that every element of the nested Array was an instance of the Cell class, the tests would break and the test suite would be annoying to maintain.
+
+In the process of adding a default value for the grid, we added an attr_reader method for the grid instance variable.  Add a test to make sure the grid method is returning the instance variable properly.
+
+[code language="ruby"]
+context "#grid" do
+  it "returns the grid" do
+    board = Board.new(grid: "blah")
+    expect(board.grid).to eq "blah"
+  end
+end
+[/code]
+
+Message senders should be able to ask a board object for the value at a given (x, y) coordinate.  Earlier in this section, we discussed how the nested array data structure works with (y, x) coordinates.  Message senders don't care about the internal data structure, so we should define a get_value(x, y) method that follows conventions of most coordinate systems.  The origin could even be reoriented from the top left to the bottom left to further follow "typical" conventions, but we will keep the origin in its current position because top left origins are fairly common in computer science.
+
+[code language="ruby"]
+def get_cell(x, y)
+  grid[y][x]
+end
+[/code]
+
+Since we defined grid to be an attr_reader, Ruby has automatically wrapped an instance method around the @grid instance variable, so we don't need to reference the @grid instance variable directly.  Whenever possible, it is preferable to reference instance methods over instance variables as instance methods are less likely to be changes in arbitrary ways that may be difficult to track.
+
+Adding a test will demonstrate the usefulness of the option to initialize the Board class with a custom grid instead of the default grid.
+
+[code language="ruby"]
+context "#get_cell" do
+  it "returns the cell based on the (x, y) coordinate" do
+    grid = [["", "", ""], ["", "", "something"], ["", "", ""]]
+    board = Board.new(grid: grid)
+    expect(board.get_cell(2, 1)).to eq "something"
+  end
+end
+[/code]
+
+We also need a method that will update the value of a Cell object.  The set_cell() method will need to know that the Cell object will respond to the value message.  Knowing "stuff" about objects other than self is called a dependency.  Objects must work together to solve complex problems, so dependencies are inevitable, but they must be tracked and managed or they will strangle an application.  Dependencies will be noted throughout this tutorial and a detailed discussion will follow after the application is completed.
+
+Define a set_cell method that takes three arguments; x, y, and the value.
+
+[code language="ruby"]
+def set_cell(x, y, value)
+  get_cell(x, y).value = value
+end
+[/code]
+
+We could test the set_cell method with an instance of the Cell class because cell objects respond to "value" messages, but then the board_spec will rely on the Cell class.  Let's use a Struct to create an object that responds to value messages instead of creating a Cell object and making a needless dependency in our test suite.
+
+[code language="ruby"]
+context "#set_cell" do
+  it "updates the value of the cell object at a (x, y) coordinate" do
+    Cat = Struct.new(:value)
+    grid = [[Cat.new("cool"), "", ""], ["", "", ""], ["", "", ""]]
+    board = Board.new(grid: grid)
+    board.set_cell(0, 0, "meow")
+    expect(board.get_cell(0, 0).value).to eq "meow"
+  end
+end
+[/code]
+
+The final responsibility of the Board class is to assess the grid and return :winner if there is a winner of the game, :draw if the game ended in a tie, and false if the game is still being played.  This method will be called game_over.
+
+[code language="ruby"]
+def game_over
+  return :winner if winner?
+  return :draw if draw?
+  false
+end
+[/code]
+
+The game_over method relies on winner? and draw? predicate methods that will be private.  Predicate methods are methods that return either true or false.
+
+The draw? method will return true if all the spaces on the grid are not empty and false otherwise.  It is possible for all spaces on the grid to be filled and for there to be a winner, so the winner? method will have to be called before draw?, as in the game_over method.
+
+Tests can still be added for game_over, even though winner? and draw? are not defined, by stubbing out winner? and draw?.
+
+[code language="ruby"]
+context "#game_over" do
+  it "returns :winner if winner? is true" do
+    board = Board.new
+    board.stub(:winner?) { true }
+    expect(board.game_over).to eq :winner
+  end
+
+  it "returns :draw if winner? is false and draw? is true" do
+    board = Board.new
+    board.stub(:winner?) { false }
+    board.stub(:draw?) { true }
+    expect(board.game_over).to eq :draw
+  end
+
+  it "returns false if winner? is false and draw? is false" do
+    board = Board.new
+    board.stub(:winner?) { false }
+    board.stub(:draw?) { false }
+    expect(board.game_over).to be_false
+  end
+end
+[/code]
+
+Before defining the winner? and draw? methods, we will monkey patch the Array class to add some useful methods that will aid analysis of an Array's contents.
+
+Add a core_extensions.rb file that reopens the Array class and defines an all_empty? method that returns true if all elements of an array are empty and false otherwise.
+
+[code language="ruby"]
+# lib/tic_tac_toe/core_extensions.rb
+class Array
+  def all_empty?
+    self.all? { |element| element.to_s.empty? }
+  end
+end
+[/code]
+
+Notice that the Array class is not wrapped in the TicTacToe module like the other application classes.  The TicTacToe module cannot wrap the Array class because we are extending the Ruby programming language, not our application.
+
+Add a core_extensions_spec.rb file to test the behavior of the Array#all_empty? method.
+
+[code language="ruby"]
+require "spec_helper"
+
+describe Array do
+  context "#all_empty?" do
+    it "returns true if all elements of the Array are empty" do
+      expect(["", "", ""].all_empty?).to be_true
+    end
+
+    it "returns false if some of the Array elements are not empty" do
+      expect(["", 1, "", Object.new, :a].all_empty?).to be_false
+    end
+
+    it "returns true for an empty Array" do
+      expect([].all_empty?).to be_true
+    end
+  end
+end
+[/code]
+
+Define an Array method that returns true if all elements of an Array are the same and false otherwise.
+
+[code language="ruby"]
+def all_same?
+  self.all? { |element| element == self[0] }
+end
+[/code]
+
+Tests for the #all_same? method are similar to the tests for the #all_empty? method.
+
+[code language="ruby"]
+context "#all_same?" do
+  it "returns true if all elements of the Array are the same" do
+    expect(["A", "A", "A"].all_same?).to be_true
+  end
+
+  it "returns false if some of the Array elements are not the same" do
+    expect(["", 1, "", Object.new, :a].all_same?).to be_false
+  end
+
+  it "returns true for an empty Array" do
+    expect([].all_same?).to be_true
+  end
+end
+[/code]
+
+Add an any_empty? method to the Array class that returns true if any elements of the array are empty and false otherwise.
+
+[code language="ruby"]
+def any_empty?
+  self.any? { |element| element.to_s.empty? }
+end
+[/code]
+
+Also add a none_empty? method that returns true if none of the elements are empty and false otherwise.
+
+[code language="ruby"]
+def none_empty?
+  !any_empty?
+end
+[/code]
+
+I will leave the exercise of adding tests for the any_empty? and none_empty? methods up to you.
+
+The Array extensions will greatly simplify logic in the Board#winner? and Board#draw? methods.  Now we are in a perfect position to define the draw? and winner? methods and add more robust tests to the Board#game_over method that do not rely on stubs.
+
+The Board#draw? method should return true if none of the Array elements are empty.  We just need to convert all the cells to a single array of values and then use the Array#none_empty? method we defined previously to check for a draw.
+
+[code language="ruby"]
+def draw?
+  grid.flatten.map { |cell| cell.value }.none_empty?
+end
+[/code]
+
+Defining the winner? method is a bit more complex.  All the possible winning positions need to be organized in an array of arrays and each possible winning position needs to be analyzed to see if the values are all the non-blank and the same.  There are 8 possible winning positions in tic-tac-toe: 3 rows, 3 columns, and 2 diagonals.  Start by defining a winning_positions method that returns an array of the 8 possible winning positions.
+
+[code language="ruby"]
+def winning_positions
+  grid + # rows
+  grid.transpose + # columns
+  diagonals # two diagonals
+end
+
+def diagonals
+  [
+    [get_cell(0, 0), get_cell(1, 1), get_cell(2, 2)],
+    [get_cell(0, 2), get_cell(1, 1), get_cell(2, 0)]
+  ]
+end
+[/code]
+
+The built-in Array#transpose method is used to collect the columns elegantly.  There are only two diagonals, so they are simply hardcoded.  winning_posisions and diagonals are private methods, so they do not need to be tested directly.  They will be tested indirectly by the game_over method once the code is written.
+
+Define a winner? method that iterates over the winning_positions and returns true if all the values in a winning position are the same and are not empty.
+
+[code language="ruby"]
+def winner?
+  winning_positions.each do |winning_position|
+    next if winning_position_values(winning_position).all_empty?
+    return true if winning_position_values(winning_position).all_same?
+  end
+  false
+end
+
+def winning_position_values(winning_position)
+  winning_position.map { |cell| cell.value }
+end
+[/code]
+
+The winner? method iterates over all the winning_positions, skipping arrays with values that are all empty and returning true if the values are all the same.  If the iteration completes and nothing is returned, false is returned by default, indicating there is no winner.
+
+The winner? and draw? methods are written, so it is time to add robust tests to the Board#game_over method that do not rely on stubbing.
+
+[code language="ruby"]
+TestCell = Struct.new(:value)
+let(:x_cell) { TestCell.new("X") }
+let(:y_cell) { TestCell.new("Y") }
+let(:empty) { TestCell.new }
+
+context "#game_over" do
+  it "returns :winner if winner? is true" do
+    board = Board.new
+    board.stub(:winner?) { true }
+    expect(board.game_over).to eq :winner
+  end
+
+  it "returns :draw if winner? is false and draw? is true" do
+    board = Board.new
+    board.stub(:winner?) { false }
+    board.stub(:draw?) { true }
+    expect(board.game_over).to eq :draw
+  end
+
+  it "returns false if winner? is false and draw? is false" do
+    board = Board.new
+    board.stub(:winner?) { false }
+    board.stub(:draw?) { false }
+    expect(board.game_over).to be_false
+  end
+
+  it "returns :winner when row has objects with values that are all the same" do
+    grid = [
+      [x_cell, x_cell, x_cell],
+      [y_cell, x_cell, y_cell],
+      [y_cell, y_cell, empty]
+    ]
+    board = Board.new(grid: grid)
+    expect(board.game_over).to eq :winner
+  end
+
+  it "returns :winner when colum has objects with values that are all the same" do
+    grid = [
+      [x_cell, x_cell, empty],
+      [y_cell, x_cell, y_cell],
+      [y_cell, x_cell, empty]
+    ]
+    board = Board.new(grid: grid)
+    expect(board.game_over).to eq :winner
+  end
+
+  it "returns :winner when diagonal has objects with values that are all the same" do
+    grid = [
+      [x_cell, empty, empty],
+      [y_cell, x_cell, y_cell],
+      [y_cell, x_cell, x_cell]
+    ]
+    board = Board.new(grid: grid)
+    expect(board.game_over).to eq :winner
+  end
+
+  it "returns :draw when all spaces on the board are taken" do
+    grid = [
+      [x_cell, y_cell, x_cell],
+      [y_cell, x_cell, y_cell],
+      [y_cell, x_cell, y_cell]
+    ]
+    board = Board.new(grid: grid)
+    expect(board.game_over).to eq :draw
+  end
+
+  it "returns false when there is no winner or draw" do
+    grid = [
+      [x_cell, empty, empty],
+      [y_cell, empty, empty],
+      [y_cell, empty, empty]
+    ]
+    board = Board.new(grid: grid)
+    expect(board.game_over).to be_false
+  end
+end
+[/code]
+
+The Board class is complete and we now turn to the Game class and build the logic to play the tic-tac-toe console game.  After writing the Game class, a short script will be written to run the program and the code-writing portion of the exercise will be complete.  Reflecting on the code will afford an opportunity to examine object-oriented design and good coding practices.
+
+<strong>Game class</strong>
+
+The purpose of the Game class is to manage the moves and turns of the players.  Create a Game class that is initialized with an array of two players and a board and randomly sets the @current_player and @other_player instance variables.
+
+[code language="ruby"]
+# lib/tic_tac_toe/game.rb
+module TicTacToe
+  class Game
+    attr_reader :players, :board, :current_player, :other_player
+    def initialize(players, board = Board.new)
+      @players = players
+      @board = board
+      @current_player, @other_player = players.shuffle
+    end
+  end
+end
+[/code]
+
+Add tests to make sure the @current_player and @other_player instance variables are being set properly.
+
+[code language="ruby"]
+# spec/tic_tac_toe/game_spec.rb
+module TicTacToe
+  describe Game do
+
+    let (:bob) { Player.new({color: "X", name: "bob"}) }
+    let (:frank) { Player.new({color: "O", name: "frank"}) }
+
+    context "#initialize" do
+      it "randomly selects a current_player" do
+        Array.any_instance.stub(:shuffle) { [frank, bob] }
+        game = Game.new([bob, frank])
+        expect(game.current_player).to eq frank
+      end
+
+      it "randomly selects an other player" do
+        Array.any_instance.stub(:shuffle) { [frank, bob] }
+        game = Game.new([bob, frank])
+        expect(game.other_player).to eq bob
+      end
+    end
+
+  end
+end
+[/code]
+
+The @current_player and @other_player instance variables will be randomly set initially and should alternate after every turn.  Add a switch_players method that will swap the values of @current_player and @other_player.
+
+[code language="ruby"]
+def switch_players
+  @current_player, @other_player = @other_player, @current_player
+end
+[/code]
+
+We can test the switch_players method by initializing a game object, running the method, and making sure that the instance variables have been switched.
+
+[code language="ruby"]
+context "#switch_players" do
+  it "will set @current_player to @other_player" do
+    game = Game.new([bob, frank])
+    other_player = game.other_player
+    game.switch_players
+    expect(game.current_player).to eq other_player
+  end
+
+  it "will set @other_player to @current_player" do
+    game = Game.new([bob, frank])
+    current_player = game.current_player
+    game.switch_players
+    expect(game.other_player).to eq current_player
+  end
+end
+[/code]
+
+The Game class is responsible for creating a message that can be printed on the command line and ask the current_player to make a move.  The human move will be a number from 1 to 9 that corresponds with a cell on the grid.
+
+<a href="http://codequizzes.files.wordpress.com/2013/10/screen-shot-2013-10-23-at-7-15-41-pm.png"><img src="http://codequizzes.files.wordpress.com/2013/10/screen-shot-2013-10-23-at-7-15-41-pm.png" alt="Screen Shot 2013-10-23 at 7.15.41 PM" width="251" height="250" class="alignnone size-full wp-image-262" /></a>
+
+Define a solicit_move method to ask the current player to enter a number between 1 and 9.
+
+[code language="ruby"]
+def solicit_move
+  "#{current_player.name}: Enter a number between 1 and 9 to make your move"
+end
+[/code]
+
+The @current_player instance variable is set randomly, so use a stub to test the solicit_move method.
+
+[code language="ruby"]
+context "#solicit_move" do
+  it "asks the player to make a move" do
+    game = Game.new([bob, frank])
+    game.stub(:current_player) { bob }
+    expected = "bob: Enter a number between 1 and 9 to make your move"
+    expect(game.solicit_move).to eq expected
+  end
+end
+[/code]
+
+Define a get_move method that takes a "human_move" which is a number between 1 and 9, returns an [x, y] coordinate.
+
+[code language="ruby"]
+def get_move(human_move = gets.chomp)
+  human_move_to_coordinate(human_move)
+end
+
+private
+
+def human_move_to_coordinate(human_move)
+  mapping = {
+    "1" => [0, 0],
+    "2" => [1, 0],
+    "3" => [2, 0],
+    "4" => [0, 1],
+    "5" => [1, 1],
+    "6" => [2, 1],
+    "7" => [0, 2],
+    "8" => [1, 2],
+    "9" => [2, 2]
+  }
+  mapping[human_move]
+end
+[/code]
+
+The get_move method sets the default value of human_move to gets.chomp so the method is easier to test.  get_move returns the [x, y] coordinate of the "human_move" which can be used by the Board#set_cell method to update the grid.
+
+[code language="ruby"]
+context "#get_move" do
+  it "converts human_move of '1' to [0, 0]" do
+    game = Game.new([bob, frank])
+    expect(game.get_move("1")).to eq [0, 0]
+  end
+
+  it "converts human_move of '1' to [0, 0]" do
+    game = Game.new([bob, frank])
+    expect(game.get_move("7")).to eq [0, 2]
+  end
+end
+[/code]
+
+Define a game_over_message method that returns "The game ended in a tie" if the board is showing a draw and returns "{current player name} won!" if there is a winner.
+
+[code language="ruby"]
+def game_over_message
+  return "#{current_player.name} won!" if board.game_over == :winner
+  return "The game ended in a tie" if board.game_over == :draw
+end
+[/code]
+
+Add tests for the game_over_message method.
+
+[code language="ruby"]
+context "#game_over_message" do
+  it "returns '{current player name} won!' if board shows a winner" do
+    game = Game.new([bob, frank])
+    game.stub(:current_player) { bob }
+    game.board.stub(:game_over) { :winner }
+    expect(game.game_over_message).to eq "bob won!"
+  end
+
+  it "returns 'The game ended in a tie' if board shows a draw" do
+    game = Game.new([bob, frank])
+    game.stub(:current_player) { bob }
+    game.board.stub(:game_over) { :draw }
+    expect(game.game_over_message).to eq "The game ended in a tie"
+  end
+end
+[/code]
+
+Add a play method to the game class that will solicit moves from players until the game is over.  When the game is over, a message should be printed to the console announcing the winning player or if the game ended in a draw.
+
+[code language="ruby"]
+def play
+  puts "#{current_player.name} has randomly been selected as the first player"
+  while true
+    board.formatted_grid
+    puts ""
+    puts solicit_move
+    x, y = get_move
+    board.set_cell(x, y, current_player.color)
+    if board.game_over
+      puts game_over_message
+      board.formatted_grid
+      return
+    else
+      switch_players
+    end
+  end
+end
+[/code]
+
+The play method is difficult to test due to its procedural nature and reliance on the console.  The best way to test this method is write a script that will execute the game and play it!
+
+Create and /example/example_game.rb file to play the game.
+
+[code language="ruby"]
+# /example/example_game.rb
+require_relative "../lib/tic_tac_toe.rb"
+
+puts "Welcome to tic tac toe"
+bob = TicTacToe::Player.new({color: "X", name: "bob"})
+frank = TicTacToe::Player.new({color: "O", name: "frank"})
+players = [bob, frank]
+TicTacToe::Game.new(players).play
+[/code]
+
+Run the game on the console with the following command:
+
+[code]
+$ ruby example/example_game.rb
+[/code]
+
+This program functions, but is fragile.  It breaks when incorrect input is provided and if users move in a cell that is already occupied, they overwrite the previous move.  This program would need improvements to be considered "production" grade, but it has followed good design principles that make future extensions and maintenance easy.
+
+<strong>Program Design</strong>
+
+The classes have a single purpose and are filled with methods that also have a single purpose.  Most methods are concise (between 1 and 3 lines) and writing tests has encouraged the methods to have a clearly defined purpose in the method name.  The Cell and Player classes have no dependencies.  Board depends on every element of the grid to respond to the :value message, but does not require the object to be cell objects.  Board knows that the grid is filled with Cell objects by default (having Board know the Cell class name and that Cell does not require any initialization parameters is another dependency), but the Board class can also be initialized with any other object that responds to the :value message.
+
+The Game class depends on the player objects to respond to :name and :color messages and for the board object to respond to :formatted_grid, :set_cell, and :game_over.  However the Game class does not require the player object to be instances of the Player class or the board object to be an instance of the Board class.  By limiting dependencies, the application's classes are easier to reuse and are more flexible for changing requirements.  Good design does not matter for applications that don't change, but most applications are frequently changed to meet new requirements.
