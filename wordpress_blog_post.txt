@@ -597,6 +597,16 @@ context "#game_over" do
 end
 [/code]
 
+As the last part of the board class, we need to make a function that actually prints the board after a move has been made. Make sure this class is public.
+
+[code language="ruby"]
+def formatted_grid
+  grid.each do |row|
+    puts row.map { |cell| cell.value.empty? ? "_" : cell.value }.join(" ")
+  end
+end
+[/code]
+
 The Board class is complete and we now turn to the Game class and build the logic to play the tic-tac-toe console game.  After writing the Game class, a short script will be written to run the program and the code-writing portion of the exercise will be complete.  Reflecting on the code will afford an opportunity to examine object-oriented design and good coding practices.
 
 <strong>Game class</strong>
