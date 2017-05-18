@@ -496,7 +496,7 @@ def diagonals
 end
 [/code]
 
-The built-in Array#transpose method is used to collect the columns elegantly.  There are only two diagonals, so they are simply hardcoded.  winning_posisions and diagonals are private methods, so they do not need to be tested directly.  They will be tested indirectly by the game_over method once the code is written.
+The built-in Array#transpose method is used to collect the columns elegantly.  There are only two diagonals, so they are simply hardcoded.  winning_positions and diagonals are private methods, so they do not need to be tested directly.  They will be tested indirectly by the game_over method once the code is written.
 
 Define a winner? method that iterates over the winning_positions and returns true if all the values in a winning position are the same and are not empty.
 
