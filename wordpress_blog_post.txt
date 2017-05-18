@@ -555,7 +555,7 @@ context "#game_over" do
     expect(board.game_over).to eq :winner
   end
 
-  it "returns :winner when colum has objects with values that are all the same" do
+  it "returns :winner when column has objects with values that are all the same" do
     grid = [
       [x_cell, x_cell, empty],
       [y_cell, x_cell, y_cell],
