@@ -1,7 +1,7 @@
 require "spec_helper"
 
 module TicTacToe
-  describe Board do
+  RSpec.describe Board do
 
     context "#initialize" do
       it "initializes the board with a grid" do
@@ -128,7 +128,7 @@ end
 
 
 #module TicTacToe
-  #describe Board do
+  #RSpec.describe Board do
 
     #context "#initialize" do
       #it "initializes the board with a grid" do

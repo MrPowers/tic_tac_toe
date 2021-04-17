@@ -1,7 +1,7 @@
 require "spec_helper"
 
 module TicTacToe
-  describe Game do
+  RSpec.describe Game do
 
     let (:bob) { Player.new({color: "X", name: "bob"}) }
     let (:frank) { Player.new({color: "O", name: "frank"}) }

@@ -81,7 +81,7 @@ Create a spec/cell_spec.rb file that requires the spec_helper and is setup so te
 require "spec_helper"
 
 module TicTacToe
-  describe Cell do
+  RSpec.describe Cell do
     # tests will be added here
   end
 end
@@ -96,7 +96,7 @@ Start by testing that a Cell object that is instantiated with no arguments will 
 [code language="ruby"]
 # spec/cell_spec.rb
 module TicTacToe
-  describe Cell do
+  RSpec.describe Cell do
 
     context "#initialize" do
       it "is initialized with a value of '' by default" do
@@ -157,7 +157,7 @@ Test that the Player class will raise an exception when initialized with an inva
 require "spec_helper"
 
 module TicTacToe
-  describe Player do
+  RSpec.describe Player do
     context "#initialize" do
 
       it "raises an exception when initialized with {}" do
@@ -239,7 +239,7 @@ Add a test to make sure a Board can be instantiated with an input hash that has 
 require "spec_helper"
 
 module TicTacToe
-  describe Board do
+  RSpec.describe Board do
 
     context "#initialize" do
       it "initializes the board with a grid" do
@@ -408,7 +408,7 @@ Add a core_extensions_spec.rb file to test the behavior of the Array#all_empty? 
 [code language="ruby"]
 require "spec_helper"
 
-describe Array do
+RSpec.describe Array do
   context "#all_empty?" do
     it "returns true if all elements of the Array are empty" do
       expect(["", "", ""].all_empty?).to be_true
@@ -632,7 +632,7 @@ Add tests to make sure the @current_player and @other_player instance variables 
 [code language="ruby"]
 # spec/tic_tac_toe/game_spec.rb
 module TicTacToe
-  describe Game do
+  RSpec.describe Game do
 
     let (:bob) { Player.new({color: "X", name: "bob"}) }
     let (:frank) { Player.new({color: "O", name: "frank"}) }
