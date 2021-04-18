@@ -1,7 +1,7 @@
 require "spec_helper"
 
 module TicTacToe
-  describe Cell do
+  RSpec.describe Cell do
 
     context "#initialize" do
       it "is initialized with a value of '' by default" do

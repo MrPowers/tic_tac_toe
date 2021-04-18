@@ -1,7 +1,7 @@
 require "spec_helper"
 
 module TicTacToe
-  describe Player do
+  RSpec.describe Player do
 
     context "#initialize" do
       it "raises an exception when initialized with {}" do
